@@ -1,0 +1,10 @@
+*ONNX python 2
+
+*Install numpy
+>>conda install numpy
+
+* In python 2.7 conda environment, protobuf 9 or 10 work with onnx (https://github.com/onnx/onnx/issues/2434)
+>>conda install protobuf=3.9
+
+*Then, install onnx from conda-forge
+>>conda install -c conda-forge onnx 

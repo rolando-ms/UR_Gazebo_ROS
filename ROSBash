@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Commands:
+#gnome-terminal : new gnome-terminal
+#-- : execute
+#/bin/bash -c : bash shell commands
+#'command1; command2...'
+#...; exec bash': keep terminal open after running commands
+#&&: logic AND
+# Be careful with spaces between commands, they can brake the script if changed !!!
+
+# Gazebo terminal (source workspace, source "conda activate", activate environment, launch gazebo)
+gnome-terminal -- /bin/bash -c 'source ~/ws_moveit/devel/setup.bash; source /home/rolando/anaconda3/bin/activate; conda activate ros_moveit; roslaunch ur_gazebo ur10.launch limited:=true; exec bash' && sleep 5 &&
+# Moveit terminal (source workspace, source "conda activate", activate environment, launch moveit)
+#gnome-terminal -- /bin/bash -c 'source ~/ws_moveit/devel/setup.bash; source /home/rolando/anaconda3/bin/activate; conda activate ros_moveit; roslaunch ur5_moveit_config ur5_moveit_planning_execution.launch sim:=true limited:=true; exec bash' && sleep 5 &&
+# Rviz terminal (source workspace, source "conda activate", activate environment, launch rviz)
+#gnome-terminal -- /bin/bash -c 'source ~/ws_moveit/devel/setup.bash; source /home/rolando/anaconda3/bin/activate; conda activate ros_moveit; roslaunch ur5_moveit_config moveit_rviz.launch config:=true' && sleep 5 &&
+# Pycharm terminal (source workspace, launch pycharm)
+gnome-terminal -- /bin/bash -c 'source ~/ws_moveit/devel/setup.bash; /home/rolando/Downloads/pycharm-community-2021.1.2/bin/pycharm.sh; exec bash'

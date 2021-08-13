@@ -1,0 +1,15 @@
+# This .gitignore file should be placed at the root of your Unity project directory
+#
+# Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
+#
+
+# Folders
+/[Tt]ests/
+/python_scripts_lab/
+
+#Intellij files
+*.idea
+
+#Other
+*.pyc
+*.ply
