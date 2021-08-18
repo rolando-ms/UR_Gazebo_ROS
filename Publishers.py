@@ -1,15 +1,15 @@
 #!/usr/bin/env/ python
 
-# Publisher-Subscriber class for ROS
-# This class is used to initialize, publish and subscribe to ROS topics to interface with the UR robot in gazebo
-
+import math
+from paho.mqtt import client as mqtt_client
 import rospy
 from std_msgs.msg import Header, Float64MultiArray
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 
-
+# Publisher-Subscriber class for ROS
+# This class is used to initialize, publish and subscribe to ROS topics to interface with the UR robot in gazebo
 class ROS_pub_sub:
     def __init__(self, node_name, pub_topic, sub_topic, joint_names, rate, speed=0.25):
         self.node_name = node_name
@@ -89,3 +89,75 @@ class ROS_pub_sub:
         new_point.data = pos
         self.pub.publish(new_point)
         self.ros_rate.sleep()
+
+
+# Publisher-Subscriber class for MQTT
+# This class is used to initialize, publish and subscribe to MQTT topics.
+class MQTT_pub_sub:
+    def __init__(self, pub_client_id='DFKImqtt1', pub_username='dfki1', pub_password='dfkipass19',
+                 pub_broker='broker.emqx.io', pub_port=1883, pub_topic='topic/state',
+                 sub_client_id='DFKImqtt2', sub_username='dfki1', sub_password='dfkipass19',
+                 sub_broker='broker.emqx.io', sub_port=1883, sub_topic='topic/goal'):
+        self.pub_topic = pub_topic
+        self.publisher = self.connect_mqtt(client_id=pub_client_id, username=pub_username, password=pub_password,
+                                 broker=pub_broker,
+                                 port=pub_port)
+        self.publisher.loop_start()
+        self.sub_topic = sub_topic
+        self.sub_msg = ' '
+        self.subscriber = self.connect_mqtt(client_id=sub_client_id, username=sub_username, password=sub_password,
+                                  broker=sub_broker,
+                                  port=sub_port)
+        self.subscriber.loop_start()
+
+    def connect_mqtt(self, client_id, username, password, broker, port):
+        def on_connect(client, userdata, flags, rc):
+            if rc == 0:
+                print("Connected to MQTT Broker!")
+            else:
+                print("Failed to connect, return code %d\n", rc)
+
+        client = mqtt_client.Client(client_id)
+        client.username_pw_set(username, password)
+        client.on_connect = on_connect
+        client.connect(broker, port)
+        return client
+
+    def publish(self, msg):
+        result = self.publisher.publish(self.pub_topic, msg)
+        status = result[0]
+        if status == 0:
+            print("Send {0} to topic {1}".format(msg, self.pub_topic))
+        else:
+            print("Failed to send message to topic {0}".format(0))
+
+    def subscribe(self):
+        # Callback function for subscriber (Used to retrieve the data)
+        def on_message(client, userdata, msg):
+            print("Received `{0}` from `{1}` topic".format(msg.payload.decode(), msg.topic))
+            self.sub_msg = msg.payload.decode()
+            # print(type(self.sub_msg))
+            # print(list(self.sub_msg))
+        self.subscriber.subscribe(self.sub_topic)
+        self.subscriber.on_message = on_message
+
+
+# Moves robot to given pose until threshold is reached
+def move_to_initial_pose(pub_subs, pose, threshold = 0.01):
+    dist = 1e6
+    steps = 0
+    while(dist > threshold):
+        pub_subs.publish(pose)
+        current_pos = pub_subs.current_pos #rospy.wait_for_message("joint_states", JointState).position
+        dist = euclidean_distance(current_pos, pose)
+        # print("current pos = {0}".format(current_pos))
+        print("distance = {0}".format(dist))
+        steps += 1
+
+
+# Computes the euclidean distance between 2 lists of numbers
+def euclidean_distance(current_pos, desired_pos):
+    sqr_sum = 0
+    for i in range(len(current_pos)):
+        sqr_sum += (desired_pos[i] - current_pos[i])**2
+    return math.sqrt(sqr_sum)
