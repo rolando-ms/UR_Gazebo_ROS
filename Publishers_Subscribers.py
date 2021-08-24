@@ -1,10 +1,12 @@
 #!/usr/bin/env/ python
 
+from geometry_msgs.msg import PointStamped
 import math
 from paho.mqtt import client as mqtt_client
 import rospy
 from std_msgs.msg import Header, Float64MultiArray
 from sensor_msgs.msg import JointState
+import tf
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 
@@ -141,6 +143,40 @@ class MQTT_pub_sub:
         self.subscriber.subscribe(self.sub_topic)
         self.subscriber.on_message = on_message
 
+
+# ROS tf listener
+# This class is used to retrieve transformations from robot model.
+class ROS_tf_listener:
+    def __init__(self, reference_frame, target_frame):
+        self.reference_frame = reference_frame
+        self.target_frame = target_frame
+        self.listener = tf.TransformListener()
+        self.listener.waitForTransform(self.target_frame, self.reference_frame, rospy.Time(0), rospy.Duration(4.0))
+        self.translation = []
+        self.rotation = []
+
+    def LookUpTransform(self):
+        try:
+            (self.translation, self.rotation) = self.listener.lookupTransform(self.target_frame, self.reference_frame, rospy.Time(0))
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            pass
+        return self.translation, self.rotation
+
+    def TransformPoint(self):
+        try:
+            point_in_new_frame = self.listener.transformPoint(self.target_frame, self.point_stamped)
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            pass
+        return point_in_new_frame
+
+    def BuildPointStamped(self, point):
+        # Point to transform with its reference frame
+        self.point_stamped = PointStamped()
+        self.point_stamped.header.frame_id = self.reference_frame
+        self.point_stamped.header.stamp = rospy.Time(0)
+        self.point_stamped.point.x = point[0]
+        self.point_stamped.point.y = point[1]
+        self.point_stamped.point.z = point[2]
 
 # Moves robot to given pose until threshold is reached
 def move_to_initial_pose(pub_subs, pose, threshold = 0.01):
