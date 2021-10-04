@@ -1,12 +1,13 @@
 #!/usr/bin/env/ python
 
-from geometry_msgs.msg import PointStamped
 import math
-from paho.mqtt import client as mqtt_client
 import rospy
+import tf
+
+from geometry_msgs.msg import PointStamped
+from paho.mqtt import client as mqtt_client
 from std_msgs.msg import Header, Float64MultiArray
 from sensor_msgs.msg import JointState
-import tf
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 
@@ -23,10 +24,10 @@ class ROS_pub_sub:
         self.ros_rate = rospy.Rate(rate)
         self.traj = None
         topic_type = None
-        if(pub_topic == '/arm_controller/command'):
+        if pub_topic == '/arm_controller/command' or pub_topic == '/eff_joint_traj_controller/command':
             topic_type = JointTrajectory
             self.init_pub_msg()
-        if(pub_topic == '/joint_group_position_controller/command'):
+        if pub_topic == '/joint_group_position_controller/command':
             topic_type = Float64MultiArray
         self.pub = rospy.Publisher(pub_topic,
                                    topic_type,
@@ -69,9 +70,9 @@ class ROS_pub_sub:
         print("Current joint velocities (rad/s) = {0}".format(self.current_vel))
 
     def publish(self, goal):
-        if (self.pub_topic == '/arm_controller/command'):
+        if self.pub_topic == '/arm_controller/command' or self.pub_topic == '/eff_joint_traj_controller/command':
             self.publish_arm_controller_point(point=goal)
-        if (self.pub_topic == '/joint_group_position_controller/command'):
+        if self.pub_topic == '/joint_group_position_controller/command':
             self.publish_joint_group_pos(pos=goal)
 
     # Publishing trajectory points ('/arm_controller/command')
@@ -105,10 +106,10 @@ class ROS_pub:
         self.ros_rate = rospy.Rate(rate)
         self.traj = None
         topic_type = None
-        if(pub_topic == '/arm_controller/command'):
+        if pub_topic == '/arm_controller/command' or pub_topic == '/eff_joint_traj_controller/command':
             topic_type = JointTrajectory
             self.init_pub_msg()
-        if(pub_topic == '/joint_group_position_controller/command'):
+        if pub_topic == '/joint_group_position_controller/command':
             topic_type = Float64MultiArray
         self.pub = rospy.Publisher(pub_topic,
                                    topic_type,
@@ -127,9 +128,9 @@ class ROS_pub:
         print("Rate (Hz) = {0}".format(self.rate))
 
     def publish(self, goal):
-        if (self.pub_topic == '/arm_controller/command'):
+        if self.pub_topic == '/arm_controller/command' or self.pub_topic == '/eff_joint_traj_controller/command':
             self.publish_arm_controller_point(point=goal)
-        if (self.pub_topic == '/joint_group_position_controller/command'):
+        if self.pub_topic == '/joint_group_position_controller/command':
             self.publish_joint_group_pos(pos=goal)
 
     # Publishing trajectory points ('/arm_controller/command')
@@ -171,7 +172,6 @@ class ROS_sub:
     # Subscriber callback to retrieve the data.
     # Data in '/joint_states' topic is ordered alphabetically, thus need reordering
     def callback(self, data):
-        #rospy.loginfo("I heard %s", data.position)
         self.current_pos = list(data.position)
         self.current_vel = list(data.velocity)
         # Swapping joint 0 value for joint 2 value (elbow and shoulder_pan respectively)
@@ -229,17 +229,16 @@ class MQTT_pub_sub:
         result = self.publisher.publish(self.pub_topic, msg, retain=True, qos=0)
         status = result[0]
         if status == 0:
-            print("Send {0} to topic {1}".format(msg, self.pub_topic))
+            # print("Send {0} to topic {1}".format(msg, self.pub_topic))
+            pass
         else:
             print("Failed to send message to topic {0}".format(0))
 
     def subscribe(self):
         # Callback function for subscriber (Used to retrieve the data)
         def on_message(client, userdata, msg):
-            print("Received `{0}` from `{1}` topic".format(msg.payload.decode(), msg.topic))
+            # print("Received `{0}` from `{1}` topic".format(msg.payload.decode(), msg.topic))
             self.sub_msg = msg.payload.decode()
-            # print(type(self.sub_msg))
-            # print(list(self.sub_msg))
         self.subscriber.subscribe(self.sub_topic)
         self.subscriber.on_message = on_message
 
@@ -274,7 +273,8 @@ class MQTT_pub:
         result = self.publisher.publish(self.pub_topic, msg, retain=True, qos=0)
         status = result[0]
         if status == 0:
-            print("Send {0} to topic {1}".format(msg, self.pub_topic))
+            # print("Send {0} to topic {1}".format(msg, self.pub_topic))
+            pass
         else:
             print("Failed to send message to topic {0}".format(0))
 
@@ -307,10 +307,8 @@ class MQTT_sub:
     def subscribe(self):
         # Callback function for subscriber (Used to retrieve the data)
         def on_message(client, userdata, msg):
-            print("Received `{0}` from `{1}` topic".format(msg.payload.decode(), msg.topic))
+            # print("Received `{0}` from `{1}` topic".format(msg.payload.decode(), msg.topic))
             self.sub_msg = msg.payload.decode()
-            # print(type(self.sub_msg))
-            # print(list(self.sub_msg))
         self.subscriber.subscribe(self.sub_topic)
         self.subscriber.on_message = on_message
 
