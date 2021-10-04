@@ -3,15 +3,21 @@
 # Main script
 # Lets the user run the keyboard control or network control functions
 
+import math
+import numpy as np
+import pygame
+import Queue
+import random
+import rospy
+import tf
+import time
+
 from Helpers import arr_to_str
 from Helpers import move_to_initial_pose
 from Helpers import move_to_initial_pose2
 from Helpers import str_to_arr
 from Keyboard_Controller import KeyboardMoveJointsGazebo
-import math
 from multipledispatch import dispatch
-import numpy as np
-# from paho.mqtt import client as mqtt_client
 from Publishers_Subscribers import MQTT_pub
 from Publishers_Subscribers import MQTT_pub_sub
 from Publishers_Subscribers import MQTT_sub
@@ -19,14 +25,9 @@ from Publishers_Subscribers import ROS_pub
 from Publishers_Subscribers import ROS_pub_sub
 from Publishers_Subscribers import ROS_sub
 from Publishers_Subscribers import ROS_tf_listener
-import pygame
 from pygameKeyPolling import PygWindow
-import Queue
-import random
-import rospy
-import tf
 from threadClass import NewThread
-import time
+
 
 
 def options_menu():
@@ -63,7 +64,7 @@ def Keyboard_Control():
 
     # Moving to initial position
     desired_pose = [0., -math.pi / 2, 0., -math.pi / 2, 0., 0.] #[0, 0, 0, 0, 0, 0]
-    move_to_initial_pose(pub_subs=pub_sub, pose=desired_pose)
+    # move_to_initial_pose(pub_subs=pub_sub, pose=desired_pose)
 
     # Keyboard joints control
     KeyboardMoveJointsGazebo(queueInput=q, pub_sub=pub_sub)
@@ -93,6 +94,7 @@ def Network_Control():
     # desired_pose = [0.] * 6
     # move_to_initial_pose(pub_subs=ros_pub_sub, pose=desired_pose)
     move_to_initial_pose2(pub=ros_pub, sub=ros_sub, pose=desired_pose)
+    print("Initial position reached! Ready to move!")
 
     # Instantiating MQTT publisher-subscriber object
     # mqtt_pub_sub = MQTT_pub_sub()
@@ -125,17 +127,6 @@ def Network_Control():
         rot = []
         trans, rot = tf_listener.LookUpTransform()
         point_in_new_frame = tf_listener.TransformPoint()
-        print("Trans = {} , rot = {}".format(trans, rot))
-        print("Point in frame {} = [{},{},{}] , Point in frame {} = [{},{},{}]".format(
-            tf_listener.target_frame,
-            tf_listener.point_stamped.point.x,
-            tf_listener.point_stamped.point.y,
-            tf_listener.point_stamped.point.z,
-            tf_listener.reference_frame,
-            point_in_new_frame.point.x + base_offset[0],
-            point_in_new_frame.point.y + base_offset[1],
-            point_in_new_frame.point.z * -1. + base_offset[2]
-        ))
 
         # Computing target vector
         world_point = np.array([point_in_new_frame.point.x + base_offset[0],
